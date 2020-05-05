@@ -15,3 +15,4 @@ from .conditional_methods import rasch_conditional
 from .jml_methods import (rasch_jml, onepl_jml, twopl_jml,
                           grm_jml, pcm_jml)
 from .ability_methods import ability_map, ability_mle, ability_eap
+from .standard_errors import standard_errors_bootstrap

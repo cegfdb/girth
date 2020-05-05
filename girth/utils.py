@@ -16,11 +16,16 @@ def default_options():
             numerical integration. Default = (-5, 5)
         quadrature_n: [int] number of quadrature points to use
                         Default = 61
+        bootstrap_iterations: [int] number of resampling iterations
+            to perform during bootstrap
+        n_processors: [int] number of processors to use
 """
     return {"max_iteration": 25,
             "distribution": gaussian(0, 1).pdf,
             "quadrature_bounds": (-5, 5),
-            "quadrature_n": 61}
+            "quadrature_n": 61,
+            "bootstrap_iterations": 2000,
+            "n_processors": 1}
 
 
 def validate_estimation_options(options_dict=None):
@@ -40,7 +45,11 @@ def validate_estimation_options(options_dict=None):
                 'quadrature_bounds':
                     lambda x: isinstance(x, (tuple, list)) and (x[1] > x[0]),
                 'quadrature_n':
-                    lambda x: isinstance(x, int) and x > 7}
+                    lambda x: isinstance(x, int) and x > 7,
+                'bootstrap_iterations':
+                    lambda x: isinstance(x, int),
+                'n_processors':
+                    lambda x: isinstance(x, int) and x > 0}
     
     # A complete options dictionary
     full_options = default_options()
