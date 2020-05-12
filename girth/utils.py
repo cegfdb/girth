@@ -216,14 +216,16 @@ def _get_quadrature_points(n, a, b):
     return (b - a) * (x + 1) * 0.5 + a
 
 
-def _compute_partial_integral(theta, difficulty, discrimination, the_sign):
-    """
-    Computes the partial integral for a set of item parameters
+def _compute_partial_integral(theta, difficulty, discrimination, the_sign, _nplib=np):
+    """ Computes the partial integral for a set of item parameters.
+
+    Discrimination parameter must be the same size as difficulty and
+    handled by the calling function.
 
     Args:
         theta: (array) evaluation points
         difficulty: (array) set of difficulty parameters
-        discrimination: (array | number) set of discrimination parameters
+        discrimination: (array) set of discrimination parameters
         the_sign:  (array) positive or negative sign
                             associated with response vector
 
@@ -236,17 +238,12 @@ def _compute_partial_integral(theta, difficulty, discrimination, the_sign):
     Notes:
         Implicitly multiplies the data by the gaussian distribution
     """
-    # Size single discrimination into full array
-    if np.atleast_1d(discrimination).size == 1:
-        discrimination = np.full(the_sign.shape[0], discrimination,
-                                 dtype='float')
-
     # This represents a 3-dimensional array
     # [Response Set, Person, Theta]
     # The integration happens over response set and the result is an
     # array of [Person, Theta]
-    kernel = the_sign[:, :, None] * np.ones((1, 1, theta.size))
+    kernel = the_sign[:, :, None] * _nplib.ones((1, 1, theta.size))
     kernel *= discrimination[:, None, None]
     kernel *= (theta[None, None, :] - difficulty[:, None, None])
 
-    return (1.0 / (1.0 + np.exp(kernel))).prod(axis=0).squeeze()
+    return (1.0 / (1.0 + _nplib.exp(kernel))).prod(axis=0).squeeze()

@@ -65,12 +65,12 @@ class TestUtilitiesMethods(unittest.TestCase):
         # Set seed for repeatability
         np.random.seed(154)
 
-        discrimination = 1.32
+        discrimination = np.random.rand(5) + 1.0
         difficuly = np.linspace(-1.3, 1.3, 5)
-        the_sign = (-1)**np.random.randint(low=0, high=2, size=(5, 1))
+        the_sign = (-1)**np.random.randint(low=0, high=2, size=(1, 1))
 
         quad_points = _get_quadrature_points(61, -6, 6)
-        dataset = _compute_partial_integral(quad_points, difficuly, discrimination,
+        dataset = _compute_partial_integral(quad_points, difficuly[2, None], discrimination[2, None],
                                             the_sign)
 
         value = integrate.fixed_quad(lambda x: dataset, -6, 6, n=61)[0]
@@ -78,7 +78,7 @@ class TestUtilitiesMethods(unittest.TestCase):
         discrrm = discrimination * the_sign * -1
         xx = np.linspace(-6, 6, 5001)
         yy = irt_evaluation(difficuly, discrrm.squeeze(), xx)
-        yy = yy.prod(axis=0)
+        yy = yy[2]
         expected = yy.sum() * 12 / 5001
 
         self.assertAlmostEqual(value, expected.sum(), places=3)
@@ -363,7 +363,7 @@ class TestOptions(unittest.TestCase):
         result = output['distribution'](x)
         np.testing.assert_array_almost_equal(expected,
                                              result, decimal=6)
-        self.assertEqual(len(output.keys()), 4)
+        self.assertEqual(len(output.keys()), 6)
 
     def test_no_input(self):
         """Testing validation for No input."""
@@ -371,7 +371,7 @@ class TestOptions(unittest.TestCase):
         x = np.linspace(-3, 3, 101)
         expected = stats.norm(0, 1).pdf(x)
 
-        self.assertEqual(len(result.keys()), 4)
+        self.assertEqual(len(result.keys()), 6)
         self.assertEqual(result['max_iteration'], 25)
         self.assertEqual(result['quadrature_n'], 61)
         self.assertTupleEqual(result['quadrature_bounds'], (-5, 5))
@@ -424,7 +424,7 @@ class TestOptions(unittest.TestCase):
 
         new_parameters = {'distribution': stats.norm(2, 1).pdf}
         output = validate_estimation_options(new_parameters)
-        self.assertEqual(len(output.keys()), 4)
+        self.assertEqual(len(output.keys()), 6)
         result = output['distribution'](x)
         np.testing.assert_array_almost_equal(expected,
                                              result, decimal=6)
@@ -435,12 +435,12 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(output['max_iteration'], 25)
         self.assertEqual(output['quadrature_n'], 13)
         self.assertTupleEqual(output['quadrature_bounds'], (-7, -5))
-        self.assertEqual(len(output.keys()), 4)
+        self.assertEqual(len(output.keys()), 6)
 
         new_parameters = {'max_iteration': 43}
         output = validate_estimation_options(new_parameters)
         self.assertEqual(output['max_iteration'], 43)
-        self.assertEqual(len(output.keys()), 4)
+        self.assertEqual(len(output.keys()), 6)
 
 
 if __name__ == '__main__':
