@@ -2,24 +2,82 @@ import numpy as np
 
 from scipy.optimize import fminbound
 
+import jax.numpy as jnp
+from jax import jacfwd, jacrev
+
 from girth import (trim_response_set_and_counts,
                    validate_estimation_options)
 
 
-def _symmetric_functions(betas):
+def _symmetric_functions(betas, _nplib=np):
     """Computes the symmetric functions based on the betas
 
         Indexes by score, left to right
 
     """
-    polynomials = np.c_[np.ones_like(betas), np.exp(-betas)]
+    polynomials = _nplib.column_stack((_nplib.ones_like(betas), 
+                                       _nplib.exp(-betas)))
 
     # This is an easy way to compute all the values at once,
     # not necessarily the fastest
-    otpt = 1
+    otpt = np.array([1])
     for polynomial in polynomials:
-        otpt = np.convolve(otpt, polynomial)
+        otpt = _nplib.convolve(otpt, polynomial)
     return otpt
+
+
+def _hess_conditional(dataset):
+    """Hessian function for computing standard errors."""
+    unique_sets, counts = np.unique(dataset, axis=1, return_counts=True)
+
+    response_set_sums = unique_sets.sum(axis=0)
+
+    def _hessian_calculation(solution):
+        full_convolution = _symmetric_functions(solution, _nplib=jnp)
+
+        denominator = full_convolution[response_set_sums]
+
+        return (jnp.sum(unique_sets * solution[:,None], axis=0).dot(counts) + 
+                jnp.log(denominator).dot(counts))
+
+    return _hessian_calculation
+
+
+def standard_errors_conditional(dataset, solution):
+    """Computes standard errors of item parameters using hessian method.
+
+    This function computes the hessian about the given solution, it is faster than
+    the bootstrap method but still might be slow on a single core machine.
+
+    Args:
+        dataset: (2d array) of collected data
+        solution: difficulty parameters
+        options: dictionary with updates to default options
+
+    Returns:
+        solution: original solution given as an input
+        hessian: (2d array) of partial derivatives
+        standard_error: parameters from dataset without resampling
+        confidence_interval: arrays with 95th percentile confidence intervals
+
+    """
+    # Compute the hessian
+    hess_func = _hess_conditional(dataset)
+    hessian = jacfwd(jacrev(hess_func))(solution)
+
+    ses = list()
+    for ndx in range(hessian.shape[0]):
+        tmp = np.delete(np.delete(hessian, ndx, axis=0), ndx, axis=1)
+        se = np.sqrt(np.diag(np.linalg.inv(tmp)).mean())
+        ses.append(se)
+
+    ci_low = solution - 1.96 * np.array(ses)
+    ci_high = solution + 1.96 * np.array(ses)
+
+    return {'Solution': solution,
+            'Hessian': hessian,
+            'Standard Error': ses,
+            'Confidence Interval': list(zip(ci_low, ci_high))}
 
 
 def rasch_conditional(dataset, discrimination=1, options=None):
