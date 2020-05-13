@@ -204,6 +204,7 @@ def standard_errors_bootstrap(dataset, irt_model, solution=None, options=None, s
 
         bias_list.append(np.nanmean(temp_result, axis=0) - parameter)
         ses_list.append(np.nanstd(temp_result, axis=0, ddof=0))
+        
         if parameter.shape[0] == 1:
             ci_list.append((np.percentile(temp_result, 2.5, axis=0),
                             np.percentile(temp_result, 97.5, axis=0)))

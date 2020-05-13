@@ -234,9 +234,6 @@ def _compute_partial_integral(theta, difficulty, discrimination, the_sign, _npli
             integration of items defined by "sign" parameters
             axis 0: individual persons
             axis 1: evaluation points (at theta)
-
-    Notes:
-        Implicitly multiplies the data by the gaussian distribution
     """
     # This represents a 3-dimensional array
     # [Response Set, Person, Theta]
